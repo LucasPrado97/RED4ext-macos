@@ -1,3 +1,4 @@
+#include <TargetConditionals.h>
 #include "App.hpp"
 #include "Addresses.hpp"
 #include "Detail/AddressHashes.hpp"
@@ -42,6 +43,11 @@ static int NativeHookSelfDetour(int)
 
 bool RunNativeHookSelfTest()
 {
+#if TARGET_OS_IPHONE
+    // CyPort: hooks are baked into the game at build time; RED4ext's own code cannot be hooked on iOS.
+    Log::info("Native hook self-test skipped on iOS (baked hooks)");
+    return true;
+#endif
     if (NativeHookSelfTarget(1) != 2)
     {
         Log::error("Native hook self-test target returned an unexpected value before patching");

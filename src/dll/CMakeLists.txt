@@ -31,6 +31,13 @@ file(
       *.cpp
 )
 
+# iOS (CyPort): no code writes at run time, hooks go through CyPort's baked slots (Platform/BakedHook.cpp).
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  list(FILTER RED4EXT_FILES EXCLUDE REGEX "Platform/NativeHook\\.cpp$")
+else()
+  list(FILTER RED4EXT_FILES EXCLUDE REGEX "Platform/BakedHook\\.cpp$")
+endif()
+
 source_group(CMake REGULAR_EXPRESSION cmake_pch.*)
 
 source_group(

@@ -3,9 +3,21 @@
 
 #ifdef RED4EXT_PLATFORM_MACOS
 #include <iostream>
+#include <dlfcn.h>
 #include <mach-o/dyld.h>
 #include <mach/mach.h>
+#include <TargetConditionals.h>
+#if TARGET_OS_IPHONE
+// iOS has no mach_vm_* API; the vm_* calls take the same arguments on arm64.
+#define mach_vm_region vm_region_64
+#define mach_vm_protect vm_protect
+typedef vm_address_t red4ext_vm_address_t;
+typedef vm_size_t red4ext_vm_size_t;
+#define mach_vm_address_t red4ext_vm_address_t
+#define mach_vm_size_t red4ext_vm_size_t
+#else
 #include <mach/mach_vm.h>
+#endif
 #include <mach/vm_map.h>
 #include <spdlog/spdlog.h>
 #include <sys/mman.h>
@@ -108,6 +120,16 @@ std::filesystem::path GetModuleFileName(Handle aHandle)
 {
     char buffer[1024];
     uint32_t size = sizeof(buffer);
+#if TARGET_OS_IPHONE
+    // CyPort: the game lives in the app's Documents, not next to the iOS executable. The shim answers with the
+    // game folder's pretend macOS executable path, so the root resolves exactly as on macOS.
+    using PathFn = int (*)(char*, uint32_t*);
+    static auto shimPath = reinterpret_cast<PathFn>(dlsym(RTLD_DEFAULT, "MSGameExecutablePath"));
+    if (shimPath && shimPath(buffer, &size) == 0)
+    {
+        return std::filesystem::path(buffer);
+    }
+#endif
     if (_NSGetExecutablePath(buffer, &size) == 0)
     {
         return std::filesystem::path(buffer);

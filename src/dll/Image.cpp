@@ -1,3 +1,4 @@
+#include <TargetConditionals.h>
 #include "Image.hpp"
 #include "Platform.hpp"
 #include "Utils.hpp"
@@ -47,6 +48,13 @@ Image::Image()
             m_isCyberpunk = true;
         }
     }
+#if TARGET_OS_IPHONE
+    // CyPort: the iOS app has its own bundle id; its Info.plist names the game executable it was built from.
+    if (!m_isCyberpunk && CFDictionaryGetValue(infoDict, CFSTR("CyPortGameExe")) != nullptr)
+    {
+        m_isCyberpunk = true;
+    }
+#endif
 
     if (m_isCyberpunk)
     {
